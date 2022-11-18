@@ -1,6 +1,6 @@
 """
-Python library for the TCS34725 Color Sensor
-Documentation (including datasheet): https://ams.com/tcs34725#tab/documents
+Python library for the TCS3400 Color Sensor
+Documentation (including datasheet): https://ams.com/tcs3400#tab/documents
 """
 
 from time import sleep
@@ -11,7 +11,7 @@ from .exceptions import ColourSensorInitialisationError, InvalidGainError, \
 class HardwareInterface:
     """
     `HardwareInterface` is the abstract class that sits between the
-    `ColourSensor` class (providing the TCS34725 sensor API) and the
+    `ColourSensor` class (providing the TCS3400 sensor API) and the
     actual hardware. Using this intermediate layer of abstraction, a
     `ColourSensor` object interacts with the hardware without being
     aware of how this interaction is implemented.
@@ -20,7 +20,7 @@ class HardwareInterface:
     files or even a hardware emulator.
     """
 
-    GAIN_VALUES = (1, 4, 16, 60)
+    GAIN_VALUES = (1, 4, 16, 64)
     CLOCK_STEP = 0.0024 # the clock step is 2.4ms
 
     @staticmethod
@@ -128,31 +128,31 @@ def _raw_wrapper(register):
 
 class I2C(HardwareInterface):
     """
-    An implementation of the `HardwareInterface` for the TCS34725 sensor
+    An implementation of the `HardwareInterface` for the TCS3400 sensor
     that uses I2C to control the sensor and retrieve measurements.
-    Use the datasheet as a reference: https://ams.com/tcs34725#tab/documents
+    Use the datasheet as a reference: https://ams.com/tcs3400#tab/documents
     """
 
     # device-specific constants
     BUS = 1
-    ADDR = 0x29
+    ADDR = 0x39
 
-    COMMAND_BIT = 0x80
+    COMMAND_BIT = 0x00
 
     # control registers 
-    ENABLE = 0x00 | COMMAND_BIT
-    ATIME = 0x01 | COMMAND_BIT
-    CONTROL = 0x0F | COMMAND_BIT
-    ID = 0x12 | COMMAND_BIT
-    STATUS = 0x13 | COMMAND_BIT
+    ENABLE = 0x80 | COMMAND_BIT
+    ATIME = 0x81 | COMMAND_BIT
+    CONTROL = 0x8F | COMMAND_BIT
+    ID = 0x92 | COMMAND_BIT
+    STATUS = 0x93 | COMMAND_BIT
     # (if a register is described in the datasheet but missing here
     # it means the corresponding functionality is not provided)
 
     # data registers
-    CDATA = 0x14 | COMMAND_BIT
-    RDATA = 0x16 | COMMAND_BIT
-    GDATA = 0x18 | COMMAND_BIT
-    BDATA = 0x1A | COMMAND_BIT
+    CDATA = 0x94 | COMMAND_BIT
+    RDATA = 0x96 | COMMAND_BIT
+    GDATA = 0x88 | COMMAND_BIT
+    BDATA = 0x9A | COMMAND_BIT
 
     # bit positions
     OFF = 0x00
@@ -181,7 +181,7 @@ class I2C(HardwareInterface):
         except Exception as e:
             explanation = "(sensor not present)"
             raise ColourSensorInitialisationError(explanation=explanation) from e
-        if id != 0x44:
+        if id != 0x90:
             explanation = f" (different device id detected: {id})"
             raise ColourSensorInitialisationError(explanation=explanation) from e
     @staticmethod
@@ -192,14 +192,14 @@ class I2C(HardwareInterface):
     def _read(self, attribute):
         """
         Read and return the value of a specific register (`attribute`) of the
-        TCS34725 colour sensor.
+        TCS3400 colour sensor.
         """
         return self.bus.read_byte_data(self.ADDR, attribute)
     
     def _write(self, attribute, value):
         """
         Write a value in a specific register (`attribute`) of the
-        TCS34725 colour sensor.
+        TCS3400 colour sensor.
         """
         self.bus.write_byte_data(self.ADDR, attribute, value)
 
